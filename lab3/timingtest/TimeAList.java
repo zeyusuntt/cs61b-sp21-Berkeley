@@ -1,5 +1,5 @@
 package timingtest;
-import edu.princeton.cs.algs4.Allowlist;
+//import edu.princeton.cs.algs4.Allowlist;
 import edu.princeton.cs.algs4.Stopwatch;
 
 /**
