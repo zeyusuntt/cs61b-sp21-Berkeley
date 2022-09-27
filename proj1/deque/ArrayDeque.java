@@ -1,5 +1,7 @@
 package deque;
 
+import java.util.Iterator;
+
 public class ArrayDeque<Item> implements  Deque<Item> {
     private Item[] items;
     private int size;
@@ -109,7 +111,7 @@ public class ArrayDeque<Item> implements  Deque<Item> {
         }
         size--;
         if (size == 0) {
-            resize(1);
+            resize(4);
         }
         else if ((double)size/capacity < 0.25) {
             resize(capacity/4);
@@ -132,6 +134,9 @@ public class ArrayDeque<Item> implements  Deque<Item> {
             nextLast = nextLast - 1;
         }
         size--;
+        if (size == 0) {
+            resize(4);
+        }
         double a = (float) size/capacity;
         if (a < 0.25) {
             resize(capacity/4);
@@ -161,9 +166,11 @@ public class ArrayDeque<Item> implements  Deque<Item> {
 
 
     /*The Deque objects we'll make are iterable, so we must provide this method to return an iterator.*/
-//    public Iterator<Item> iterator() {
-//
-//    }
+    public Iterator<Item> iterator() {
+        return new ArrayDequeIterator();
+    }
+
+
 
     /*Returns whether the parameter o is equal to the Deque. o is considered equal if it is a Deque and if it
     * contains the same contents in the same order*/
@@ -182,5 +189,20 @@ public class ArrayDeque<Item> implements  Deque<Item> {
             }
         }
         return true;
+    }
+
+    public class ArrayDequeIterator implements Iterator<Item> {
+        private int index;
+        ArrayDequeIterator() {
+            index = 0;
+        }
+        public boolean hasNext() {
+            return index < size;
+        }
+        public Item next() {
+            Item returnItem = get(index);
+            index += 1;
+            return returnItem;
+        }
     }
 }

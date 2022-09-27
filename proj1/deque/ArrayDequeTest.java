@@ -1,6 +1,9 @@
 package deque;
+import jh61b.junit.In;
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import edu.princeton.cs.algs4.StdRandom;
 
 public class ArrayDequeTest {
     @Test
@@ -150,5 +153,130 @@ public class ArrayDequeTest {
             test.addFirst(i);
         }
         test.printDeque();
+    }
+
+    @Test
+    /*Test equal function*/
+    public void equalTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        ArrayDeque<Integer> ad2 = new ArrayDeque<Integer>();
+        ad1.addFirst(1);
+        ad1.addFirst(2);
+        ad2.addFirst(1);
+        ad2.addFirst(2);
+        assertTrue(ad1.equals(ad2));
+        ad2.addFirst(9);
+        assertFalse(ad1.equals(ad2));
+        assertFalse(ad1.equals(2));
+    }
+
+    @Test
+    /*Test normal add function.*/
+    public void normalAddTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        ad1.addFirst(1);
+        ad1.addFirst(2);
+        assertEquals(2,ad1.size());
+
+    }
+
+    @Test
+    /*Test resizing add function.*/
+    public void resizingAddTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 1000; i ++) {
+            ad1.addFirst(i);
+        }
+        assertEquals(1000, ad1.size());
+    }
+
+    @Test
+    /*Test big amount add test.*/
+    public void bigAmountAddTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 100000; i ++) {
+            ad1.addFirst(i);
+        }
+        assertEquals(100000, ad1.size());
+    }
+
+    @Test
+    /*Test normal remove function.*/
+    public void normalRemoveTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 7; i ++) {
+            ad1.addFirst(i);
+        }
+        int a = ad1.removeFirst();
+        assertEquals(6, a);
+    }
+
+    @Test
+    /*Test resizing remove function.*/
+    public void resizingRemoveTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 10; i ++) {
+            ad1.addFirst(i);
+        }
+        for (int i = 0; i < 8; i++) {
+            int a = ad1.removeLast();
+            assertEquals(i, a);
+            assertEquals(9-i, ad1.size());
+        }
+
+    }
+
+    @Test
+    public void bigAmountRemoveTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 1000; i ++) {
+            ad1.addFirst(i);
+        }
+        for (int i = 0; i < 800; i++) {
+            int a = ad1.removeLast();
+            assertEquals(i, a);
+            assertEquals(999-i, ad1.size());
+        }
+    }
+
+    @Test
+    public void iteratorTest() {
+        ArrayDeque<Integer> ad1 = new ArrayDeque<>();
+        for (int i = 0; i < 10; i ++) {
+            ad1.addFirst(i);
+        }
+
+        for (Integer item: ad1) {
+
+        }
+    }
+
+    @Test
+    public void randomizedTest() {
+        ArrayDeque<Integer> a = new ArrayDeque<Integer>();
+        for (int i = 0; i < 100000; i++) {
+            int operationNum = StdRandom.uniform(0, 5);
+            if (operationNum == 0) {
+                int ranVal = StdRandom.uniform(0,100);
+                a.addFirst(ranVal);
+                int compare = a.get(0);
+                assertEquals(ranVal, compare);
+            }
+            else if (operationNum == 1) {
+                int ranVal = StdRandom.uniform(0,100);
+                a.addLast(ranVal);
+                int compare = a.get(a.size() - 1);
+                assertEquals(ranVal, compare);
+            }
+            else if (operationNum == 2) {
+                a.removeFirst();
+            }
+            else if (operationNum == 3) {
+                a.removeLast();
+            }
+            else if (operationNum == 4) {
+                assertTrue(a.size() >= 0);
+            }
+        }
     }
 }
