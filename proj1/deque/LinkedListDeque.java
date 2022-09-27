@@ -1,9 +1,8 @@
 package deque;
 
-import java.util.Deque;
 import java.util.Iterator;
 
-public class LinkedListDeque<Item> {
+public class LinkedListDeque<Item> implements Deque<Item> {
     private class IntNode {
         public Item item;
         public IntNode prev;
@@ -56,9 +55,9 @@ public class LinkedListDeque<Item> {
     }
 
     /*Returns true if deque is empty, false otherwise.*/
-    public boolean isEmpty() {
-        return size == 0;
-    }
+//    public boolean isEmpty() {
+//        return size == 0;
+//    }
 
     /*Returns the number of items in the deque.*/
     public int size() {
@@ -133,17 +132,29 @@ public class LinkedListDeque<Item> {
         return cur.item;
     }
 
-//    /*The Deque objects we'll make are iterable, so we must provide this method to return an iterator.*/
+    /*The Deque objects we'll make are iterable, so we must provide this method to return an iterator.*/
 //    public Iterator<Item> iterator() {
 //
 //    }
-//
-//    /*Returns whether the parameter o is equal to the Deque. o is considered equal if it is a Deque and if it
-//    * contains the same contents in the same order*/
-//    public boolean equals(Object o) {
-//
-//        return true;
-//    }
+
+    /*Returns whether the parameter o is equal to the Deque. o is considered equal if it is a Deque and if it
+    * contains the same contents in the same order*/
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof LinkedListDeque<?>)) {
+            return false;
+        }
+        LinkedListDeque<?> comparison = (LinkedListDeque<?>) o;
+        if (comparison.size() != size) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if(comparison.get(i) != get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 
 }

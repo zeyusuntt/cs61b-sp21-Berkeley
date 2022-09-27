@@ -1,6 +1,6 @@
 package deque;
 
-public class ArrayDeque<Item> {
+public class ArrayDeque<Item> implements  Deque<Item> {
     private Item[] items;
     private int size;
     private int nextFirst;
@@ -62,9 +62,9 @@ public class ArrayDeque<Item> {
     }
 
     /*Returns true if deque is empty, false otherwise.*/
-    public boolean isEmpty() {
-        return size == 0;
-    }
+//    public boolean isEmpty() {
+//        return size == 0;
+//    }
 
     /*Returns the number of items in the deque.*/
     public int size() {
@@ -160,15 +160,27 @@ public class ArrayDeque<Item> {
 
 
 
-//    /*The Deque objects we'll make are iterable, so we must provide this method to return an iterator.*/
+    /*The Deque objects we'll make are iterable, so we must provide this method to return an iterator.*/
 //    public Iterator<Item> iterator() {
 //
 //    }
-//
-//    /*Returns whether the parameter o is equal to the Deque. o is considered equal if it is a Deque and if it
-//    * contains the same contents in the same order*/
-//    public boolean equals(Object o) {
-//
-//        return true;
-//    }
+
+    /*Returns whether the parameter o is equal to the Deque. o is considered equal if it is a Deque and if it
+    * contains the same contents in the same order*/
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ArrayDeque<?>)) {
+            return false;
+        }
+        ArrayDeque<?> comparison = (ArrayDeque<?>) o;
+        if (comparison.size() != size) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if(comparison.get(i) != get(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
