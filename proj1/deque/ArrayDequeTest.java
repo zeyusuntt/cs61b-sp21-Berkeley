@@ -135,4 +135,20 @@ public class ArrayDequeTest {
         }
         assertEquals(null, test.get(11));
     }
+
+    @Test
+    /*First fill up, then empty, then fill up again*/
+    public void fillEmptyTest() {
+        ArrayDeque<Integer> test = new ArrayDeque<Integer>();
+        for (int i = 0; i < 8; i ++) {
+            test.addLast(i);
+        }
+        for (int i = 0; i < 8; i ++) {
+            test.removeFirst();
+        }
+        for (int i = 0; i < 8; i ++) {
+            test.addFirst(i);
+        }
+        test.printDeque();
+    }
 }

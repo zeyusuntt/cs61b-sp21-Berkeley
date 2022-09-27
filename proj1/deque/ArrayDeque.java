@@ -108,7 +108,10 @@ public class ArrayDeque<Item> {
             nextFirst = nextFirst + 1;
         }
         size--;
-        if ((double)size/capacity < 0.25) {
+        if (size == 0) {
+            resize(1);
+        }
+        else if ((double)size/capacity < 0.25) {
             resize(capacity/4);
         }
         return result;
