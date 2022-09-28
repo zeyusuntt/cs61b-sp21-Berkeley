@@ -13,7 +13,7 @@ public class TestArrayDequeEC {
         StudentArrayDeque<Integer> sad1 = new StudentArrayDeque<>();
         ArrayDequeSolution<Integer> ad1 = new ArrayDequeSolution<>();
 
-        for (int i = 0; i < 100; i += 1) {
+        for (int i = 0; i < 10000; i += 1) {
             double numberBetweenZeroAndOne = StdRandom.uniform();
 
             if (numberBetweenZeroAndOne < 0.25) {
