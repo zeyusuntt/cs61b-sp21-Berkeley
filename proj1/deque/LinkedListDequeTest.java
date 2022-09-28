@@ -169,4 +169,15 @@ public class LinkedListDequeTest {
             }
         }
     }
+
+    @Test
+    public void iteratorTest() {
+        LinkedListDeque <Integer> ad1 = new LinkedListDeque<>();
+        for (int i = 0; i < 10; i ++) {
+            ad1.addFirst(i);
+        }
+        for (Integer item: ad1) {
+            System.out.println(item);
+        }
+    }
 }

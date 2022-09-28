@@ -245,9 +245,8 @@ public class ArrayDequeTest {
         for (int i = 0; i < 10; i ++) {
             ad1.addFirst(i);
         }
-
         for (Integer item: ad1) {
-
+            System.out.println(item);
         }
     }
 
