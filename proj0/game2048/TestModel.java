@@ -592,8 +592,8 @@ public class TestModel extends TestUtils {
     public void testDownNonAdjacentNoMerge1() {
         int[][] before = new int[][]{
                 {0, 0, 0, 0},
-                {0, 2, 0, 0},
                 {0, 0, 0, 0},
+                {0, 2, 0, 0},
                 {0, 4, 0, 0},
         };
         int[][] after = new int[][]{

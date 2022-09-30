@@ -54,13 +54,15 @@ public enum Side {
     /** Return the standard column number for square (C, R) on a board
      *  of size SIZE oriented with this Side on top. */
     public int col(int c, int r, int size) {
-        return col0 * (size - 1) + c * drow + r * dcol;
+        int p = col0 * (size - 1) + c * drow + r * dcol;
+        return p;
     }
 
     /** Return the standard row number for square (C, R) on a board
      *  of size SIZE oriented with this Side on top. */
     public int row(int c, int r, int size) {
-        return row0 * (size - 1) - c * dcol + r * drow;
+        int q = row0 * (size - 1) - c * dcol + r * drow;
+        return q;
     }
 
     /** Parameters describing this Side, as documented in the comment at the

@@ -114,11 +114,100 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
+        // first, do the up direction. steps:
+        // only consider one column, build helper function1.
+        // 1. for every tile, check if it's null, do it from up to down.
+        // 2. if null, do nothing; if it's not null, move.
+        // 3. move: if the upper tiles are not null, and the value of the upper tile is different, don't move;
+        //    if the upper tiles are null, move to the null; if the upper tile is the same value, move to this tile
+        // for step 3, build a helper function2. the goal is to find the upper adjacent tile. if it has, return the
+        // tile, else return null, and the tile could move to the top of the board.
+
+        // revise it, not only for the north, but also for all directions
+        board.setViewingPerspective(side);
+        for (int col = 0; col < size(); col++) {
+            changed = moveOneCol(col) || changed;
+        }
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
         }
+
         return changed;
+    }
+
+    /* Find the upper tile
+    * */
+    private vTile findUpperTile(vTile cur) {
+        // to do:
+        // the goal is to find the upper adjacent tile. if it has, return the
+        // tile, else return null, and the tile could move to the top of the board.
+        int row = cur.row;
+        int col = cur.col;
+        for (int i = row + 1; i < size(); i ++) {
+            if (board.tile(col, i) != null) {
+                Tile tileCheck = board.tile(col, i);
+                vTile vTileCheck = new vTile(col,i,tileCheck);
+                return vTileCheck;
+            }
+        }
+        return null;
+    }
+
+    /* Move only one column of the board
+    * */
+    private boolean moveOneCol(int col) {
+        // To do:
+        // 1. for every tile, check if it's null, do it from up to down.
+        // 2. if null, do nothing; if it's not null, move.
+        // 3. move: if the upper tiles are not null, and the value of the upper tile is different, don't move;
+        //    if the upper tiles are null, move to the null; if the upper tile is the same value, move to this tile
+
+        boolean changed;
+        changed = false;
+        boolean [] ifMerge = {false, false, false, false};
+        for (int i = size()-2; i >= 0; i--) {
+            Tile curTile = board.tile(col, i);
+            vTile curvTile = new vTile(col, i, curTile);
+            Side s = board.ViewingPerspectiveCheck();
+            if ( curTile != null) {
+                vTile uppervTile = findUpperTile(curvTile);
+//                Tile upperTile = uppervTile.actualTile;
+                if (uppervTile == null) {
+                    board.move(col, size()-1, curTile);
+                    changed = true;
+                }
+                // fail the tricky merge, if the tile has been merged, it could not be merged again.
+                // how to check if the tile has been merged
+                else if (uppervTile.actualTile.value() == curTile.value() && !ifMerge[uppervTile.row]) {
+                    board.move(col, uppervTile.row, curTile);
+                    changed = true;
+                    score += tile(col,uppervTile.row).value() ;
+                    ifMerge[uppervTile.row] = true;
+                }
+                else if (uppervTile.actualTile.row() - curTile.row() != 1) {
+                    board.move(col, uppervTile.row - 1, curTile);
+                    changed = true;
+                }
+                else {
+                    continue;
+                }
+            }
+        }
+        return changed;
+    }
+
+
+    private static class vTile {
+        int col;
+        int row;
+        Tile actualTile;
+        public vTile(int c, int r, Tile t) {
+            col = c;
+            row = r;
+            actualTile = t;
+        }
     }
 
     /** Checks if the game is over and sets the gameOver variable
@@ -138,6 +227,16 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        // if null tile exists, return true, else return false
+        for (int i = 0; i < b.size(); i += 1) {
+            for (int j = 0; j < b.size(); j += 1) {
+                if (b.tile(i,j) == null) {
+                    return true;
+                }
+            }
+        }
+        System.out.println(b.tile(0,0));
+        System.out.println(b.size());
         return false;
     }
 
@@ -148,6 +247,13 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i,j) != null && b.tile(i,j).value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,6 +265,26 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        if (emptySpaceExists(b)) {
+            return true;
+        }
+        // compare two adjacent tiles, if inbound and equal, return true
+        for (int col = 0; col < b.size(); col++) {
+            for (int row = 0; row < b.size(); row++) {
+                if (col - 1 >= 0 && b.tile(col, row).value() == b.tile(col-1, row).value()) {
+                    return true;
+                }
+                if (col + 1 < b.size() && b.tile(col, row).value() == b.tile(col+1, row).value()) {
+                    return true;
+                }
+                if (row - 1 >= 0 && b.tile(col, row).value() == b.tile(col, row-1).value()) {
+                    return true;
+                }
+                if (row + 1 < b.size() && b.tile(col, row).value() == b.tile(col, row+1).value()) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 

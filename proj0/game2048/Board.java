@@ -25,6 +25,9 @@ public class Board implements Iterable<Tile> {
     public void setViewingPerspective(Side s) {
         viewPerspective = s;
     }
+    public Side ViewingPerspectiveCheck() {
+        return viewPerspective;
+    }
 
     /** Create a board where RAWVALUES hold the values of the tiles on the board 
      * (0 is null) with a current score of SCORE and the viewing perspective set to north. */
@@ -59,7 +62,8 @@ public class Board implements Iterable<Tile> {
     /** Return the current Tile at (COL, ROW), when sitting with the board
      *  oriented so that SIDE is at the top (farthest) from you. */
     private Tile vtile(int col, int row, Side side) {
-        return values[side.col(col, row, size())][side.row(col, row, size())];
+        Tile checkTile = values[side.col(col, row, size())][side.row(col, row, size())];
+        return checkTile;
     }
 
     /** Return the current Tile at (COL, ROW), where 0 <= ROW < size(),
