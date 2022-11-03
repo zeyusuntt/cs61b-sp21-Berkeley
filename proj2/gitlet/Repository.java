@@ -40,7 +40,7 @@ public class Repository implements Serializable {
     public HashMap<String,Commit> branches;
     public String curBranch;
 
-    public Repository() throws IOException {
+    public Repository()  {
         setupPersistence();
         initCommit = new Commit();
         initCommit.saveCommit();
@@ -54,7 +54,7 @@ public class Repository implements Serializable {
     }
 
 
-    public void setupPersistence() throws IOException {
+    public void setupPersistence() {
         if(!GITLET_DIR.exists()) {
             GITLET_DIR.mkdir();
         }
@@ -68,7 +68,11 @@ public class Repository implements Serializable {
             BLOB_FOLDER.mkdir();
         }
         if (!CURRENT_REPO.exists()) {
-            CURRENT_REPO.createNewFile();
+            try {
+                CURRENT_REPO.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         if (!REMOVAL_FOLDER.exists()) {
             REMOVAL_FOLDER.mkdir();
@@ -279,7 +283,7 @@ public class Repository implements Serializable {
         System.out.println("\n");
     }
 
-    public void checkoutFile(String filename) throws IOException {
+    public void checkoutFile(String filename) {
         // find the file in the current commit
         // deserialized the file content
         // write the file in cwd
@@ -302,16 +306,20 @@ public class Repository implements Serializable {
     /**
      * first deserialize the uid blob and read the content in string and then write the content to cwd
      */
-    public static void writeToCwd(String uid, String filename) throws IOException {
+    public static void writeToCwd(String uid, String filename){
         String fileContent = readBlob(uid);
         File fileInCwd = Utils.join(CWD, filename);
         if (!fileInCwd.exists()) {
-            fileInCwd.createNewFile();
+            try {
+                fileInCwd.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         writeContents(fileInCwd, fileContent);
     }
     // todo: do we need to abbr??
-    public void checkoutCommit(String commitId, String filename) throws IOException {
+    public void checkoutCommit(String commitId, String filename) {
         Commit curCommit = Commit.fromFile(commitId);
         String sha = curCommit.getBlobs().get(filename);
         if (sha == null) {
@@ -320,7 +328,7 @@ public class Repository implements Serializable {
         writeToCwd(sha, filename);
     }
 
-    public void checkoutBranch(String branchname) throws IOException {
+    public void checkoutBranch(String branchname) {
         // first check if the branch name exists, if not throw an error
         // current branch, equal to head, then throw an error
         // first check if there is a file that is not tracked by the current branch, if so throw an error
@@ -371,7 +379,7 @@ public class Repository implements Serializable {
         branches.remove(branchname);
     }
 
-    public void reset(String commitUid) throws IOException {
+    public void reset(String commitUid) {
         File commitFile = Utils.join(Commit.COMMIT_FOLDER, commitUid);
         if (!commitFile.exists()) {
             throw new GitletException("No commit with that id exists.");
@@ -396,7 +404,7 @@ public class Repository implements Serializable {
         branches.put(curBranch, head);
     }
 
-    public void merge(String branchname) throws IOException {
+    public void merge(String branchname) {
         // first find split point, should find parent list which has the same last one but next one
         // check, if split point == given branch, message; if split point == current branch, check out given branch
         // get all file set, the three total
