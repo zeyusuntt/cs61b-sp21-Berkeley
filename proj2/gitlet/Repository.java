@@ -237,12 +237,13 @@ public class Repository implements Serializable {
         int count = 0;
         for (String eachUid: allCommits) {
             Commit curCommit = Commit.fromFile(eachUid);
-            if (curCommit.getMessage().equals(msg));
-            System.out.println(eachUid);
-            count ++;
+            if (curCommit.getMessage().equals(msg)) {
+                System.out.println(eachUid);
+                count ++;
+            }
         }
         if (count == 0) {
-            throw new GitletException("Found no commit with that message.");
+            System.out.println("Found no commit with that message.");
         }
     }
 
@@ -303,7 +304,8 @@ public class Repository implements Serializable {
         HashMap<String,String> blobs = head.getBlobs();
         String sha = blobs.get(filename);
         if (sha == null) {
-            throw new GitletException("File does not exist in that commit.");
+            System.out.println("File does not exist in that commit.");
+            return;
         }
         writeToCwd(sha, filename);
     }
@@ -335,7 +337,8 @@ public class Repository implements Serializable {
         Commit curCommit = Commit.fromFile(commitId);
         String sha = curCommit.getBlobs().get(filename);
         if (sha == null) {
-            throw new GitletException("File does not exist in that commit.");
+            System.out.println("File does not exist in that commit.");
+            return;
         }
         writeToCwd(sha, filename);
     }
@@ -350,15 +353,18 @@ public class Repository implements Serializable {
         // the given branch is seen as the current, head
         // todo: branches has not pass the test
         if (!branches.containsKey(branchname)) {
-            throw new GitletException("No such branch exists.");
+            System.out.println("No such branch exists.");
+            return;
         }
         if (curBranch.equals(branchname)) {
-            throw new GitletException("No need to checkout the current branch.");
+            System.out.println("No need to checkout the current branch.");
+            return;
         }
         Set<String> curFileSet = head.getBlobs().keySet();
         Set<String> newFileSet = branches.get(branchname).getBlobs().keySet();
         if (!curFileSet.containsAll(newFileSet)) {
-            throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            return;
         }
         // change the cwd
         for (String filename: newFileSet) {
@@ -376,17 +382,20 @@ public class Repository implements Serializable {
 
     public void branch(String branchname) {
         if (branches.containsKey(branchname)) {
-            throw new GitletException("A branch with that name already exists.");
+            System.out.println("A branch with that name already exists.");
+            return;
         }
         branches.put(branchname, head);
     }
 
     public void rm_branch(String branchname) {
         if (!branches.containsKey(branchname)) {
-            throw new GitletException("A branch with that name does not exist.");
+            System.out.println("A branch with that name does not exist.");
+            return;
         }
         if (curBranch.equals(branchname)) {
-            throw new GitletException("Cannot remove the current branch.");
+            System.out.println("Cannot remove the current branch.");
+            return;
         }
         branches.remove(branchname);
     }
@@ -394,13 +403,15 @@ public class Repository implements Serializable {
     public void reset(String commitUid) {
         File commitFile = Utils.join(Commit.COMMIT_FOLDER, commitUid);
         if (!commitFile.exists()) {
-            throw new GitletException("No commit with that id exists.");
+            System.out.println("No commit with that id exists.");
+            return;
         }
         Commit newCommit = Commit.fromFile(commitUid);
         Set<String> curFileSet = head.getBlobs().keySet();
         Set<String> newFileSet = newCommit.getBlobs().keySet();
         if (!curFileSet.containsAll(newFileSet)) {
-            throw new GitletException("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            return;
         }
         // change the cwd
         for (String filename: newFileSet) {
@@ -436,18 +447,22 @@ public class Repository implements Serializable {
         // check given branch with curBranch if the same
         // check untracked file, if it's overwritten or deleted, error
         if (!stageArea.isEmpty() || !rm.isEmpty()) {
-            throw new GitletException("You have uncommitted changes.");
+            System.out.println("You have uncommitted changes.");
+            return;
         }
         if (!branches.containsKey(branchname)) {
-            throw new GitletException("A branch with that name does not exist.");
+            System.out.println("A branch with that name does not exist.");
+            return;
         }
         if (curBranch.equals(branchname)) {
-            throw new GitletException("Cannot merge a branch with itself.");
+            System.out.println("Cannot merge a branch with itself.");
+            return;
         }
         Commit givenCommit = branches.get(branchname);
         Commit splitPoint = findSplitPoint(head, givenCommit);
         if (splitPoint.equals(givenCommit)) {
-            throw new GitletException("Given branch is an ancestor of the current branch.");
+            System.out.println("Given branch is an ancestor of the current branch.");
+            return;
         }
         if (splitPoint.equals(head)) {
             checkoutBranch(branchname);
