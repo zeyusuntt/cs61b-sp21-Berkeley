@@ -71,7 +71,7 @@ public class Main {
             case "checkout":
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 if (args.length == 2) {
-                    repo.checkoutBranch(args[2]);
+                    repo.checkoutBranch(args[1]);
                 }
                 else if (args.length == 3) {
                     if (args[1].equals("--")) {
