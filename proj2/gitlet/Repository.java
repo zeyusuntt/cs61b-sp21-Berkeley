@@ -409,18 +409,26 @@ public class Repository implements Serializable {
         Commit newCommit = Commit.fromFile(commitUid);
         Set<String> curFileSet = head.getBlobs().keySet();
         Set<String> newFileSet = newCommit.getBlobs().keySet();
-        if (!curFileSet.containsAll(newFileSet)) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            return;
-        }
-        // change the cwd
         for (String filename: newFileSet) {
-            writeToCwd(newCommit.getBlobs().get(filename), filename);
+            checkoutCommit(commitUid, filename);
         }
-        curFileSet.removeAll(newFileSet);
         for (String filename: curFileSet) {
-            Utils.restrictedDelete(Utils.join(CWD, filename));
+            if (!newFileSet.contains(filename)) {
+                Utils.restrictedDelete(Utils.join(CWD, filename));
+            }
         }
+//        if (!curFileSet.containsAll(newFileSet)) {
+//            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+//            return;
+//        }
+//        // change the cwd
+//        for (String filename: newFileSet) {
+//            writeToCwd(newCommit.getBlobs().get(filename), filename);
+//        }
+//        curFileSet.removeAll(newFileSet);
+//        for (String filename: curFileSet) {
+//            Utils.restrictedDelete(Utils.join(CWD, filename));
+//        }
         stageArea.clear();
         rm.clear();
         head = newCommit;

@@ -70,12 +70,15 @@ public class Main {
                 break;
             case "checkout":
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
-                if (args.length == 3) {
+                if (args.length == 2) {
+                    repo.checkoutBranch(args[2]);
+                }
+                else if (args.length == 3) {
                     if (args[1].equals("--")) {
                         repo.checkoutFile(args[2]);
                     }
                     else {
-                        repo.checkoutBranch(args[2]);
+                        throw new GitletException("You must input valid checkout command.");
                     }
                 }
                 else if(args.length == 4) {
