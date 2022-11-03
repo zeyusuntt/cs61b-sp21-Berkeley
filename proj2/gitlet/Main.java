@@ -20,7 +20,8 @@ public class Main {
         switch(firstArg) {
             case "init":
                 if (Repository.GITLET_DIR.exists()) {
-                    throw new GitletException("A Gitlet version-control system already exists in the current directory.");
+                    System.out.println("A Gitlet version-control system already exists in the current directory.");
+                    return;
                 }
                 repo = new Repository();
                 break;
@@ -34,8 +35,9 @@ public class Main {
                 break;
             // TODO: FILL THE REST IN
             case "commit":
-                if (args.length < 2) {
-                    throw new GitletException("Please enter a commit message");
+                if (args[1].isEmpty()) {
+                    System.out.println("Please enter a commit message");
+                    return;
                 }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.commit(args[1]);

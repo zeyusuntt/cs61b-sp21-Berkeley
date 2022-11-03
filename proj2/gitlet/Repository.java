@@ -103,7 +103,12 @@ public class Repository implements Serializable {
     public void add(String filename) {
         // first, read file content and save to blob folder
         // read file content
-        String fileContent = readFile(filename);
+        File thisFile = Utils.join(CWD, filename);
+        if (!thisFile.exists()) {
+            System.out.println("File does not exist.");
+            return;
+        }
+        String fileContent = readContentsAsString(thisFile);
         // if the cwd file is identical to the commit one, do not stage and delete the staged one
         // first we should read the content
         // second, compare the two, use blobcode to find the blob of the commit, in other word, if blobcode is in the
@@ -121,8 +126,11 @@ public class Repository implements Serializable {
             if (stageArea.containsKey(filename)) {
                 // todo: think about if we should save file in the stage_folder
 //                Utils.restrictedDelete(Utils.join(STAGE_FOLDER, stageArea.get(filename)));
-                Utils.restrictedDelete(Utils.join(BLOB_FOLDER, stageArea.get(filename)));
+//                Utils.restrictedDelete(Utils.join(BLOB_FOLDER, stageArea.get(filename)));
                 stageArea.remove(filename);
+            }
+            if (rm.containsKey(filename)) {
+                rm.remove(filename);
             }
             return;
         }
@@ -154,7 +162,8 @@ public class Repository implements Serializable {
         HashMap<String, String> newBlobs = head.getBlobs();
         // read from stage to find the correlated blobs
         if (stageArea.isEmpty()) {
-            throw new GitletException("No changes added to the commit.");
+            System.out.println("No changes added to the commit.");
+            return;
         }
         for (String eachKey: stageArea.keySet()) {
             newBlobs.put(eachKey, stageArea.get(eachKey));
@@ -176,17 +185,17 @@ public class Repository implements Serializable {
         // check if it's in the stageArea, if so, delete
         // check if it's in the head commit, if so, stage it in the rm, and delete in the current directory
         // error
-        String fileContent = readFile(fileName);
-        String sha = Utils.sha1(Utils.serialize(fileContent));
-        if (stageArea.containsKey(fileName) && stageArea.get(fileName).equals(sha)) {
-            stageArea.remove(fileName, sha);
+//        String fileContent = readFile(fileName);
+//        String sha = Utils.sha1(Utils.serialize(fileContent));
+        if (stageArea.containsKey(fileName)) {
+            stageArea.remove(fileName);
         }
-        else if (head.getBlobs().containsKey(fileName) && head.getBlobs().get(fileName).equals(sha)) {
-            rm.put(fileName, sha);
+        else if (head.getBlobs().containsKey(fileName)) {
+            rm.put(fileName, head.getBlobs().get(fileName));
             Utils.restrictedDelete(Utils.join(CWD, fileName));
         }
         else {
-            throw new GitletException("No reason to remove the file.");
+            System.out.println("No reason to remove the file.");
         }
     }
 
@@ -252,9 +261,11 @@ public class Repository implements Serializable {
             if (curBranch.equals(eachBranch.toString())) {
                 System.out.println("*" + eachBranch.toString());
             }
-            System.out.println(eachBranch.toString());
+            else {
+                System.out.println(eachBranch.toString());
+            }
         }
-        System.out.println("\n");
+//        System.out.println("\n");
 
 
         System.out.println("=== Staged Files ===");
@@ -265,7 +276,7 @@ public class Repository implements Serializable {
                 System.out.println(eachStage.toString());
             }
         }
-        System.out.println("\n");
+//        System.out.println("\n");
 
         System.out.println("=== Removed Files ===");
         if (!rm.isEmpty()) {
@@ -275,12 +286,12 @@ public class Repository implements Serializable {
                 System.out.println(eachRm.toString());
             }
         }
-        System.out.println("\n");
+//        System.out.println("\n");
 
         System.out.println("=== Modifications Not Staged For Commit ===");
-        System.out.println("\n");
+//        System.out.println("\n");
         System.out.println("=== Untracked Files ===");
-        System.out.println("\n");
+//        System.out.println("\n");
     }
 
     public void checkoutFile(String filename) {
