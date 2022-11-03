@@ -161,7 +161,7 @@ public class Repository implements Serializable {
         newParent.add(Utils.sha1(Utils.serialize(head)));
         HashMap<String, String> newBlobs = head.getBlobs();
         // read from stage to find the correlated blobs
-        if (stageArea.isEmpty()) {
+        if (stageArea.isEmpty() && rm.isEmpty()) {
             System.out.println("No changes added to the commit.");
             return;
         }
@@ -172,6 +172,7 @@ public class Repository implements Serializable {
         for (String eachKey: rm.keySet()) {
             newBlobs.remove(eachKey);
         }
+        rm.clear();
         Commit newCommit = new Commit(msg, new Date(), newParent, newBlobs);
         head = newCommit;
         branches.put(curBranch, head);
