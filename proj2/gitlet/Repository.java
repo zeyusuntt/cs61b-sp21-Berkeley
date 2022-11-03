@@ -265,7 +265,7 @@ public class Repository implements Serializable {
                 System.out.println(eachBranch.toString());
             }
         }
-//        System.out.println("\n");
+        System.out.println("");
 
 
         System.out.println("=== Staged Files ===");
@@ -276,7 +276,7 @@ public class Repository implements Serializable {
                 System.out.println(eachStage.toString());
             }
         }
-//        System.out.println("\n");
+        System.out.println("");
 
         System.out.println("=== Removed Files ===");
         if (!rm.isEmpty()) {
@@ -286,12 +286,12 @@ public class Repository implements Serializable {
                 System.out.println(eachRm.toString());
             }
         }
-//        System.out.println("\n");
+        System.out.println("");
 
         System.out.println("=== Modifications Not Staged For Commit ===");
-//        System.out.println("\n");
+        System.out.println("");
         System.out.println("=== Untracked Files ===");
-//        System.out.println("\n");
+        System.out.println("");
     }
 
     public void checkoutFile(String filename) {
