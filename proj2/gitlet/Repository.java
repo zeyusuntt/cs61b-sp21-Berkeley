@@ -403,7 +403,7 @@ public class Repository implements Serializable {
                 return;
             }
             String sha = headCommit.getBlobs().get(filename);
-            if (Utils.join(BLOB_FOLDER, sha).exists() && Utils.join(CWD, filename).exists() && !readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
+            if (!readContentsAsString(Utils.join(BLOB_FOLDER, sha)).isEmpty() && !readContentsAsString(Utils.join(CWD, filename)).isEmpty() && !readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 return;
             }
