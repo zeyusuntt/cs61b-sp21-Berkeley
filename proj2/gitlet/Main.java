@@ -27,6 +27,10 @@ public class Main {
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 if (args.length < 2) {
                     throw new GitletException("You must input valid add command.");
                 }
@@ -35,6 +39,10 @@ public class Main {
                 break;
             // TODO: FILL THE REST IN
             case "commit":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 if (args[1].isEmpty()) {
                     System.out.println("Please enter a commit message");
                     return;
@@ -43,6 +51,10 @@ public class Main {
                 repo.commit(args[1]);
                 break;
             case "rm":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 if (args.length < 2) {
                     throw new GitletException("Please enter a valid rm command");
                 }
@@ -50,14 +62,26 @@ public class Main {
                 repo.rm(args[1]);
                 break;
             case "log":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.log();
                 break;
             case "global-log":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.global_log();
                 break;
             case "find":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 if (args.length < 2) {
                     throw new GitletException("Please enter a valid find command");
                 }
@@ -65,10 +89,18 @@ public class Main {
                 repo.find(args[1]);
                 break;
             case "status":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.status();
                 break;
             case "checkout":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 if (args.length == 2) {
                     repo.checkoutBranch(args[1]);
@@ -89,23 +121,40 @@ public class Main {
                 }
                 break;
             case "branch":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.branch(args[1]);
                 break;
             case "rm-branch":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.rm_branch(args[1]);
                 break;
             case "reset":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.reset(args[1]);
                 break;
             case "merge":
+                if (!Repository.GITLET_DIR.exists()) {
+                    System.out.println("Not in an initialized Gitlet directory.");
+                    return;
+                }
                 repo = Utils.readObject(Repository.CURRENT_REPO, Repository.class);
                 repo.merge(args[1]);
                 break;
             default:
-                throw new GitletException("No command with that name exists.");
+                System.out.println("No command with that name exists.");
+                return;
         }
         repo.store();
     }

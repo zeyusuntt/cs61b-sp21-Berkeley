@@ -1,4 +1,5 @@
 package gitlet;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -36,7 +37,7 @@ public class Repository implements Serializable {
     public Commit head;
     public HashMap<String, String> stageArea;
     public HashMap<String, String> rm;
-    public Commit master;
+//    public Commit master;
     public HashMap<String,Commit> branches;
     public String curBranch;
 
@@ -47,7 +48,7 @@ public class Repository implements Serializable {
         head = initCommit;
         stageArea = new HashMap<>();
         rm = new HashMap<>();
-        master = head;
+//        master = head;
         curBranch = "master";
         branches = new HashMap<>();
         branches.put(curBranch, head);
@@ -204,7 +205,12 @@ public class Repository implements Serializable {
         // print the commit history, we should get the parent list and deserialize all the commit in the list
         // todo: format time, try to understand
         // todo: merge
-        ArrayList<String> commitList = head.getParent();
+        // todo: know the hacky code!!!!
+        ArrayList<String> commitList = new ArrayList<>();
+        for (String uid: head.getParent()) {
+            commitList.add(uid);
+            Commit test1 = Commit.fromFile(uid);
+        }
         commitList.add(Utils.sha1(Utils.serialize(head)));
         for (int i = commitList.size() - 1; i >= 0; i--) {
             String uid = commitList.get(i);
