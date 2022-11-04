@@ -384,9 +384,17 @@ public class Repository implements Serializable {
             System.out.println("No need to checkout the current branch.");
             return;
         }
+        String commitUid = branches.get(branchname);
+
+        checkoutArbitraryCommit(commitUid);
+        curBranch = branchname;
+        head = branches.get(branchname);
+    }
+
+    public void checkoutArbitraryCommit(String CommitUid) {
         Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
         Set<String> curFileSet = headCommit.getBlobs().keySet();
-        Commit branchCommit = readObject(Utils.join(Commit.COMMIT_FOLDER,branches.get(branchname)), Commit.class);
+        Commit branchCommit = readObject(Utils.join(Commit.COMMIT_FOLDER,CommitUid), Commit.class);
         Set<String> newFileSet = branchCommit.getBlobs().keySet();
         List<String> cwdFileList = Utils.plainFilenamesIn(CWD); // todo: hacky!!!
         for (String filename: cwdFileList) {
@@ -395,7 +403,7 @@ public class Repository implements Serializable {
                 return;
             }
             String sha = headCommit.getBlobs().get(filename);
-            if (!readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
+            if (Utils.join(BLOB_FOLDER, sha).exists() && Utils.join(CWD, filename).exists() && !readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 return;
             }
@@ -411,9 +419,8 @@ public class Repository implements Serializable {
         }
         stageArea.clear();
         rm.clear();
-        curBranch = branchname;
-        head = branches.get(branchname);
     }
+
 
     public void branch(String branchname) {
         if (branches.containsKey(branchname)) {
@@ -442,32 +449,7 @@ public class Repository implements Serializable {
             System.out.println("No commit with that id exists.");
             return;
         }
-        Commit newCommit = Commit.fromFile(commitUid);
-        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
-        Set<String> curFileSet = headCommit.getBlobs().keySet();
-        Set<String> newFileSet = newCommit.getBlobs().keySet();
-        for (String filename: newFileSet) {
-            checkoutCommit(commitUid, filename);
-        }
-        for (String filename: curFileSet) {
-            if (!newFileSet.contains(filename)) {
-                Utils.restrictedDelete(Utils.join(CWD, filename));
-            }
-        }
-//        if (!curFileSet.containsAll(newFileSet)) {
-//            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-//            return;
-//        }
-//        // change the cwd
-//        for (String filename: newFileSet) {
-//            writeToCwd(newCommit.getBlobs().get(filename), filename);
-//        }
-//        curFileSet.removeAll(newFileSet);
-//        for (String filename: curFileSet) {
-//            Utils.restrictedDelete(Utils.join(CWD, filename));
-//        }
-        stageArea.clear();
-        rm.clear();
+        checkoutArbitraryCommit(commitUid);
         head = commitUid;
         branches.put(curBranch, head);
     }
