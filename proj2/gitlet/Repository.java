@@ -357,7 +357,18 @@ public class Repository implements Serializable {
         writeContents(fileInCwd, fileContent);
     }
     // todo: do we need to abbr??
-    public void checkoutCommit(String commitId, String filename) {
+    public void checkoutCommit(String unsureCommitId, String filename) {
+        String commitId;
+        if (unsureCommitId.length() == 7) {
+            commitId = returnCompleteCommitId(unsureCommitId);
+            if (commitId.equals("-1")) {
+                System.out.println("No commit with that id exists.");
+                return;
+            }
+        }
+        else {
+            commitId = unsureCommitId;
+        }
         File readFile = Utils.join(Commit.COMMIT_FOLDER, commitId);
         if (!readFile.exists()) {
             System.out.println("No commit with that id exists.");
@@ -371,6 +382,17 @@ public class Repository implements Serializable {
         }
         writeToCwd(sha, filename);
     }
+
+    public String returnCompleteCommitId(String unsureCommitId) {
+        List<String> allCommits = Utils.plainFilenamesIn(Commit.COMMIT_FOLDER);
+        for (String commitId: allCommits) {
+            if (commitId.substring(0, 7).equals(unsureCommitId)) {
+                return commitId;
+            }
+        }
+        return "-1";
+    }
+
 
     public void checkoutBranch(String branchname) {
         // first check if the branch name exists, if not throw an error
@@ -513,43 +535,36 @@ public class Repository implements Serializable {
         Boolean conflict = false;
         // done the file set, should implement the 7 file rules
         for (String filename: allFile) {
-            String uidofParent = splitPoint.getBlobs().get(filename);
-            String uidofHead = headCommit.getBlobs().get(filename);
-            String uidofGiven = givenCommit.getBlobs().get(filename);
+            String uidofParent = " ";
+            if (splitPoint.getBlobs().containsKey(filename)) {
+                uidofParent = splitPoint.getBlobs().get(filename);
+            }
+            String uidofHead = " ";
+            if (headCommit.getBlobs().containsKey(filename)) {
+                uidofHead = headCommit.getBlobs().get(filename);
+            }
+            String uidofGiven = " ";
+            if (givenCommit.getBlobs().containsKey(filename)) {
+                uidofGiven = givenCommit.getBlobs().get(filename);
+            }
             // 1.if modified in given but not head, stage given for addition
-            if (splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename) && uidofParent.equals(uidofHead)) {
+            if (!uidofParent.equals(" ") && !uidofGiven.equals(" ") && !uidofHead.equals(" ") && uidofParent.equals(uidofHead)) {
                 stageArea.put(filename, uidofGiven);
             }
             // 3.if both modified, in same way: don't change; in different way: conflict
-            if (splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)&& headCommit.getBlobs().containsKey(filename) && !uidofParent.equals(uidofHead) && !uidofParent.equals(uidofGiven) && !uidofGiven.equals(uidofHead)) {
+            if (!uidofParent.equals(uidofHead) && !uidofParent.equals(uidofGiven) && !uidofGiven.equals(uidofHead)) {
                 // conflict
                 // first read content and then write a new file, should stage and store the file in the BLOB_FOLDER
-//                mergeConflict(uidofHead, uidofGiven, filename);
-//                conflict = true;
-                continue;
-            }
-            if (!headCommit.getBlobs().containsKey(filename) && splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename) && !uidofParent.equals(uidofGiven)) {
-//                mergeConflict(uidofHead, uidofGiven, filename);
-//                conflict = true;
-                continue;
-            }
-            if (headCommit.getBlobs().containsKey(filename) && splitPoint.getBlobs().containsKey(filename) && !givenCommit.getBlobs().containsKey(filename) && !uidofParent.equals(uidofHead)) {
-//                mergeConflict(uidofHead, uidofGiven, filename);
-//                conflict = true;
-                continue;
-            }
-            if (headCommit.getBlobs().containsKey(filename) && !splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename) && !uidofHead.equals(uidofGiven)) {
-//                mergeConflict(uidofHead, uidofGiven, filename);
-//                conflict = true;
-                continue;
+                mergeConflict(uidofHead, uidofGiven, filename);
+                conflict = true;
             }
             // 5.only in given, stage given for addition
-            if (!splitPoint.getBlobs().containsKey(filename) && !headCommit.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)) {
+            if (uidofParent.equals(" ") && uidofHead.equals(" ") && !uidofGiven.equals(" ")) {
                 stageArea.put(filename, uidofGiven);
                 writeToCwd(uidofGiven,filename);
             }
             // 6.only absent in given, stage for remove, and untracked
-            if (splitPoint.getBlobs().containsKey(filename) && headCommit.getBlobs().containsKey(filename) && uidofHead.equals(uidofParent) && !givenCommit.getBlobs().containsKey(filename)) {
+            if (!uidofParent.equals(" ") && !uidofHead.equals(" ") && uidofGiven.equals(" ") && uidofHead.equals(uidofParent)) {
                 rm(filename);
             }
         }
@@ -592,17 +607,21 @@ public class Repository implements Serializable {
         branches.put(curBranch, head);
     }
     public void mergeConflict(String uidofHead, String uidofGiven, String filename) {
-        File headFile = Utils.join(BLOB_FOLDER, uidofHead);
-        String headFileContent = readContentsAsString(headFile);
-        File givenFile = Utils.join(BLOB_FOLDER, uidofGiven);
-        String givenFileContent = readContentsAsString(givenFile);
-        // huanhang
-        writeContents(Utils.join(STAGE_FOLDER, filename),"<<<<<<< HEAD", headFileContent, "=======", givenFileContent, ">>>>>>>");
-        String fileContent = Utils.readContentsAsString(Utils.join(STAGE_FOLDER, filename));
-        String blobCode = Utils.sha1(Utils.serialize(fileContent));
-        writeContents(Utils.join(BLOB_FOLDER, blobCode), fileContent);
+        // todo: how to solve null
+        String headFileContent = " ";
+        if (!uidofHead.equals(" ")) {
+            File headFile = Utils.join(BLOB_FOLDER, uidofHead);
+            headFileContent = readContentsAsString(headFile);
+        }
+        String givenFileContent = " ";
+        if (!uidofGiven.equals(" ")) {
+            File givenFile = Utils.join(BLOB_FOLDER, uidofGiven);
+            givenFileContent = readContentsAsString(givenFile);
+        }
+        String newFileContent = "<<<<<<< HEAD" + "\n" + headFileContent + "=======" + "\n" + givenFileContent + ">>>>>>>";
+        String blobCode = Utils.sha1(Utils.serialize(newFileContent));
+        writeContents(Utils.join(BLOB_FOLDER, blobCode),newFileContent);
         stageArea.put(filename, blobCode);
-        Utils.restrictedDelete(Utils.join(STAGE_FOLDER, filename));
     }
 
     public Commit findSplitPoint(Commit headCommit, Commit givenCommit) {
