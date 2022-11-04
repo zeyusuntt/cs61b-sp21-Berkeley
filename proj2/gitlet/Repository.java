@@ -646,7 +646,13 @@ public class Repository implements Serializable {
 
         List<String> headParent = headCommit.getParent();
         List<String> givenParent = givenCommit.getParent();
-        for (int i = 0; i < Math.min(headParent.size() - 1, givenParent.size()); i++) {
+        if (headParent.size() == 1) {
+            return Commit.fromFile(headParent.get(0));
+        }
+        if (givenParent.size() == 1) {
+            return Commit.fromFile(headParent.get(0));
+        }
+        for (int i = 0; i < Math.min(headParent.size(), givenParent.size()) - 1; i++) {
             if (headParent.get(i).equals(givenParent.get(i))) {
                 if ( !headParent.get(i+1).equals(givenParent.get(i+1))) {
                     return Commit.fromFile(headParent.get(i));
