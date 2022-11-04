@@ -234,6 +234,11 @@ public class Repository implements Serializable {
         Commit curCommit = Commit.fromFile(uid);
         System.out.println("===");
         System.out.println("commit " + uid);
+        if (curCommit.getMessage().startsWith("Merged")) {
+            String completeFirstParent = curCommit.getParent().get(curCommit.getParent().size() - 2);
+            String completeSecondParent = curCommit.getParent().get(curCommit.getParent().size() - 1);
+            System.out.println("Merge: " + completeFirstParent.substring(0, 7) + " " + completeSecondParent.substring(0, 7));
+        }
         Formatter fmt = new Formatter(Locale.ENGLISH);
         Date cal = curCommit.getTimeStamp();
         fmt.format("%ta %tb %td %tR:%tS %tY %tz", cal, cal, cal, cal, cal, cal, cal);
@@ -516,38 +521,88 @@ public class Repository implements Serializable {
                 stageArea.put(filename, uidofGiven);
             }
             // 3.if both modified, in same way: don't change; in different way: conflict
-            if (!uidofParent.equals(uidofHead) && !uidofParent.equals(uidofGiven) && !uidofGiven.equals(uidofHead)) {
+            if (splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)&& headCommit.getBlobs().containsKey(filename) && !uidofParent.equals(uidofHead) && !uidofParent.equals(uidofGiven) && !uidofGiven.equals(uidofHead)) {
                 // conflict
                 // first read content and then write a new file, should stage and store the file in the BLOB_FOLDER
-                File headFile = Utils.join(BLOB_FOLDER, uidofHead);
-                String headFileContent = readContentsAsString(headFile);
-                File givenFile = Utils.join(BLOB_FOLDER, uidofGiven);
-                String givenFileContent = readContentsAsString(givenFile);
-                // huanhang
-                writeContents(Utils.join(STAGE_FOLDER, filename),"<<<<<<< HEAD", headFileContent, "=======", givenFileContent, ">>>>>>>");
-                String fileContent = Utils.readContentsAsString(Utils.join(STAGE_FOLDER, filename));
-                String blobCode = Utils.sha1(Utils.serialize(fileContent));
-                writeContents(Utils.join(BLOB_FOLDER, blobCode), fileContent);
-                stageArea.put(filename, blobCode);
-                Utils.restrictedDelete(Utils.join(STAGE_FOLDER, filename));
-                conflict = true;
+//                mergeConflict(uidofHead, uidofGiven, filename);
+//                conflict = true;
+                continue;
+            }
+            if (!headCommit.getBlobs().containsKey(filename) && splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename) && !uidofParent.equals(uidofGiven)) {
+//                mergeConflict(uidofHead, uidofGiven, filename);
+//                conflict = true;
+                continue;
+            }
+            if (headCommit.getBlobs().containsKey(filename) && splitPoint.getBlobs().containsKey(filename) && !givenCommit.getBlobs().containsKey(filename) && !uidofParent.equals(uidofHead)) {
+//                mergeConflict(uidofHead, uidofGiven, filename);
+//                conflict = true;
+                continue;
+            }
+            if (headCommit.getBlobs().containsKey(filename) && !splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename) && !uidofHead.equals(uidofGiven)) {
+//                mergeConflict(uidofHead, uidofGiven, filename);
+//                conflict = true;
+                continue;
             }
             // 5.only in given, stage given for addition
             if (!splitPoint.getBlobs().containsKey(filename) && !headCommit.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)) {
                 stageArea.put(filename, uidofGiven);
+                writeToCwd(uidofGiven,filename);
             }
             // 6.only absent in given, stage for remove, and untracked
             if (splitPoint.getBlobs().containsKey(filename) && headCommit.getBlobs().containsKey(filename) && uidofHead.equals(uidofParent) && !givenCommit.getBlobs().containsKey(filename)) {
-                rm.put(filename, uidofParent);
+                rm(filename);
             }
         }
         // commit
-        commit("Merged" + branchname + "into" + curBranch);
+        commitMerge(branchname);
         if (conflict) {
             System.out.println("Encountered a merge conflict.");
         }
         // todo: error checking
 
+    }
+
+    public void commitMerge(String branchname) {
+        List<String> allCommits = Utils.plainFilenamesIn(Commit.COMMIT_FOLDER);
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
+        ArrayList<String> headParent = headCommit.getParent();
+        ArrayList<String> newParent = new ArrayList<>();
+        newParent.addAll(headParent);
+        newParent.add(head);
+        newParent.add(branches.get(branchname));
+        HashMap<String, String> headBlobs = headCommit.getBlobs();
+        HashMap<String, String> newBlobs = new HashMap<>();
+        newBlobs.putAll(headBlobs);
+        // read from stage to find the correlated blobs
+        if (stageArea.isEmpty() && rm.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            return;
+        }
+        for (String eachKey: stageArea.keySet()) {
+            newBlobs.put(eachKey, stageArea.get(eachKey));
+        }
+        stageArea.clear();
+        for (String eachKey: rm.keySet()) {
+            newBlobs.remove(eachKey);
+        }
+        rm.clear();
+        Commit newCommit = new Commit("Merged " + branchname + " into " + curBranch + ".", new Date(), newParent, newBlobs);
+        newCommit.saveCommit();
+        head = Utils.sha1(Utils.serialize(newCommit));
+        branches.put(curBranch, head);
+    }
+    public void mergeConflict(String uidofHead, String uidofGiven, String filename) {
+        File headFile = Utils.join(BLOB_FOLDER, uidofHead);
+        String headFileContent = readContentsAsString(headFile);
+        File givenFile = Utils.join(BLOB_FOLDER, uidofGiven);
+        String givenFileContent = readContentsAsString(givenFile);
+        // huanhang
+        writeContents(Utils.join(STAGE_FOLDER, filename),"<<<<<<< HEAD", headFileContent, "=======", givenFileContent, ">>>>>>>");
+        String fileContent = Utils.readContentsAsString(Utils.join(STAGE_FOLDER, filename));
+        String blobCode = Utils.sha1(Utils.serialize(fileContent));
+        writeContents(Utils.join(BLOB_FOLDER, blobCode), fileContent);
+        stageArea.put(filename, blobCode);
+        Utils.restrictedDelete(Utils.join(STAGE_FOLDER, filename));
     }
 
     public Commit findSplitPoint(Commit headCommit, Commit givenCommit) {
