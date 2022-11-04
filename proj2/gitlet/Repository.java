@@ -34,25 +34,23 @@ public class Repository implements Serializable {
 
     /* TODO: fill in the rest of this class. */
     public static final Commit initCommit = new Commit();
-    public Commit head;
+    public String head;
     public HashMap<String, String> stageArea;
     public HashMap<String, String> rm;
 //    public Commit master;
-    public HashMap<String,Commit> branches;
+    public HashMap<String,String> branches;
     public String curBranch;
-    public String curSha;
+
 
     public Repository()  {
         setupPersistence();
         initCommit.saveCommit();
-        head = initCommit;
+        head = Utils.sha1(Utils.serialize(initCommit));
         stageArea = new HashMap<>();
         rm = new HashMap<>();
-        Commit master = head;
         curBranch = "master";
         branches = new HashMap<>();
-        branches.put(curBranch, master);
-        curSha = Utils.sha1(Utils.serialize(head));
+        branches.put(curBranch, head);
     }
 
 
@@ -105,6 +103,7 @@ public class Repository implements Serializable {
     public void add(String filename) {
         // first, read file content and save to blob folder
         // read file content
+        List<String> allCommits = Utils.plainFilenamesIn(Commit.COMMIT_FOLDER);
         File thisFile = Utils.join(CWD, filename);
         if (!thisFile.exists()) {
             System.out.println("File does not exist.");
@@ -121,7 +120,8 @@ public class Repository implements Serializable {
         String blobCode = Utils.sha1(Utils.serialize(fileContent));
 
         // read the current commit folder, get the blobs
-        HashMap<String, String> blobs= head.getBlobs();
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
+        HashMap<String, String> blobs= headCommit.getBlobs();
 
         // check if blobcode is in the blobs
         if (blobs.containsKey(filename) && blobs.get(filename).equals(blobCode)) {
@@ -159,11 +159,13 @@ public class Repository implements Serializable {
         // 2. update the stage one and rm one
         // 3. clear stage area and rm area
         // 4. update tree and change head
-        ArrayList<String> headParent = head.getParent();
+        List<String> allCommits = Utils.plainFilenamesIn(Commit.COMMIT_FOLDER);
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
+        ArrayList<String> headParent = headCommit.getParent();
         ArrayList<String> newParent = new ArrayList<>();
         newParent.addAll(headParent);
-        newParent.add(Utils.sha1(Utils.serialize(head)));
-        HashMap<String, String> headBlobs = head.getBlobs();
+        newParent.add(head);
+        HashMap<String, String> headBlobs = headCommit.getBlobs();
         HashMap<String, String> newBlobs = new HashMap<>();
         newBlobs.putAll(headBlobs);
         // read from stage to find the correlated blobs
@@ -181,10 +183,8 @@ public class Repository implements Serializable {
         rm.clear();
         Commit newCommit = new Commit(msg, new Date(), newParent, newBlobs);
         newCommit.saveCommit();
-        head = newCommit;
-        Commit curhead = head;
-        branches.put(curBranch, curhead);
-        curSha = Utils.sha1(Utils.serialize(head));
+        head = Utils.sha1(Utils.serialize(newCommit));
+        branches.put(curBranch, head);
         // todo: rm
     }
 
@@ -196,11 +196,12 @@ public class Repository implements Serializable {
         // error
 //        String fileContent = readFile(fileName);
 //        String sha = Utils.sha1(Utils.serialize(fileContent));
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
         if (stageArea.containsKey(fileName)) {
             stageArea.remove(fileName);
         }
-        else if (head.getBlobs().containsKey(fileName)) {
-            rm.put(fileName, head.getBlobs().get(fileName));
+        else if (headCommit.getBlobs().containsKey(fileName)) {
+            rm.put(fileName, headCommit.getBlobs().get(fileName));
             Utils.restrictedDelete(Utils.join(CWD, fileName));
         }
         else {
@@ -213,16 +214,16 @@ public class Repository implements Serializable {
         // todo: format time, try to understand
         // todo: merge
         // todo: know the hacky code!!!!
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
         List<String> allCommits = Utils.plainFilenamesIn(Commit.COMMIT_FOLDER);
-        String heauid = Utils.sha1(Utils.serialize(head));
         ArrayList<String> commitList = new ArrayList<>();
-        for (String uid: head.getParent()) {
+        for (String uid: headCommit.getParent()) {
             commitList.add(uid);
 
         }
 //        Commit test1 = Commit.fromFile(commitList.get(0));
 //        Commit test2 = Commit.fromFile(commitList.get(1));
-        commitList.add(curSha);
+        commitList.add(head);
         for (int i = commitList.size() - 1; i >= 0; i--) {
             String uid = commitList.get(i);
             printLog(uid);
@@ -318,7 +319,8 @@ public class Repository implements Serializable {
         // deserialized the file content
         // write the file in cwd
         // if file does not exist, error
-        HashMap<String,String> blobs = head.getBlobs();
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
+        HashMap<String,String> blobs = headCommit.getBlobs();
         String sha = blobs.get(filename);
         if (sha == null) {
             System.out.println("File does not exist in that commit.");
@@ -382,15 +384,17 @@ public class Repository implements Serializable {
             System.out.println("No need to checkout the current branch.");
             return;
         }
-        Set<String> curFileSet = head.getBlobs().keySet();
-        Set<String> newFileSet = branches.get(branchname).getBlobs().keySet();
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
+        Set<String> curFileSet = headCommit.getBlobs().keySet();
+        Commit branchCommit = readObject(Utils.join(Commit.COMMIT_FOLDER,branches.get(branchname)), Commit.class);
+        Set<String> newFileSet = branchCommit.getBlobs().keySet();
         List<String> cwdFileList = Utils.plainFilenamesIn(CWD); // todo: hacky!!!
         for (String filename: cwdFileList) {
             if (newFileSet.contains(filename) && !curFileSet.contains(filename)) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 return;
             }
-            String sha = head.getBlobs().get(filename);
+            String sha = headCommit.getBlobs().get(filename);
             if (!readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 return;
@@ -398,7 +402,7 @@ public class Repository implements Serializable {
         }
         // change the cwd
         for (String filename: newFileSet) {
-            writeToCwd(branches.get(branchname).getBlobs().get(filename), filename);
+            writeToCwd(branchCommit.getBlobs().get(filename), filename);
         }
         for (String filename: curFileSet) {
             if (!newFileSet.contains(filename)) {
@@ -409,7 +413,6 @@ public class Repository implements Serializable {
         rm.clear();
         curBranch = branchname;
         head = branches.get(branchname);
-        curSha = Utils.sha1(Utils.serialize(head));
     }
 
     public void branch(String branchname) {
@@ -417,7 +420,7 @@ public class Repository implements Serializable {
             System.out.println("A branch with that name already exists.");
             return;
         }
-        Commit newBranch = head;
+        String newBranch = head;
         branches.put(branchname, newBranch);
     }
 
@@ -440,7 +443,8 @@ public class Repository implements Serializable {
             return;
         }
         Commit newCommit = Commit.fromFile(commitUid);
-        Set<String> curFileSet = head.getBlobs().keySet();
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
+        Set<String> curFileSet = headCommit.getBlobs().keySet();
         Set<String> newFileSet = newCommit.getBlobs().keySet();
         for (String filename: newFileSet) {
             checkoutCommit(commitUid, filename);
@@ -464,7 +468,7 @@ public class Repository implements Serializable {
 //        }
         stageArea.clear();
         rm.clear();
-        head = newCommit;
+        head = commitUid;
         branches.put(curBranch, head);
     }
 
@@ -499,20 +503,21 @@ public class Repository implements Serializable {
             System.out.println("Cannot merge a branch with itself.");
             return;
         }
-        Commit givenCommit = branches.get(branchname);
-        Commit splitPoint = findSplitPoint(head, givenCommit);
+        Commit headCommit = readObject(Utils.join(Commit.COMMIT_FOLDER, head), Commit.class);
+        Commit givenCommit = Utils.readObject(Utils.join(Commit.COMMIT_FOLDER, branches.get(branchname)), Commit.class);
+        Commit splitPoint = findSplitPoint(headCommit, givenCommit);
         if (splitPoint.equals(givenCommit)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         }
-        if (splitPoint.equals(head)) {
+        if (splitPoint.equals(headCommit)) {
             checkoutBranch(branchname);
             System.out.println("Current branch fast-forwarded.");
             return;
         }
         // done all the preparations and then need to merge the fileset
         Set<String> parentFileSet = splitPoint.getBlobs().keySet();
-        Set<String> headFileSet = head.getBlobs().keySet();
+        Set<String> headFileSet = headCommit.getBlobs().keySet();
         Set<String> givenFileSet = givenCommit.getBlobs().keySet();
         Set<String> allFile = new HashSet<>();
         allFile.addAll(parentFileSet);
@@ -522,7 +527,7 @@ public class Repository implements Serializable {
         // done the file set, should implement the 7 file rules
         for (String filename: allFile) {
             String uidofParent = splitPoint.getBlobs().get(filename);
-            String uidofHead = head.getBlobs().get(filename);
+            String uidofHead = headCommit.getBlobs().get(filename);
             String uidofGiven = givenCommit.getBlobs().get(filename);
             // 1.if modified in given but not head, stage given for addition
             if (uidofParent.equals(uidofHead) && splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)) {
@@ -546,7 +551,7 @@ public class Repository implements Serializable {
                 conflict = true;
             }
             // 5.only in given, stage given for addition
-            if (!splitPoint.getBlobs().containsKey(filename) && !head.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)) {
+            if (!splitPoint.getBlobs().containsKey(filename) && !headCommit.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)) {
                 stageArea.put(filename, uidofGiven);
             }
             // 6.only absent in given, stage for remove, and untracked
@@ -564,7 +569,8 @@ public class Repository implements Serializable {
     }
 
     public Commit findSplitPoint(Commit headCommit, Commit givenCommit) {
-        List<String> headParent = head.getParent();
+
+        List<String> headParent = headCommit.getParent();
         List<String> givenParent = givenCommit.getParent();
         for (int i = 0; i < Math.min(headParent.size(), givenParent.size()); i++) {
             if (headParent.get(i) == givenParent.get(i)) {
