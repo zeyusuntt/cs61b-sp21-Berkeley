@@ -33,25 +33,26 @@ public class Repository implements Serializable {
     public static final File REMOVAL_FOLDER = join(GITLET_DIR, ".removedFiles");
 
     /* TODO: fill in the rest of this class. */
-    public final Commit initCommit;
+    public static final Commit initCommit = new Commit();
     public Commit head;
     public HashMap<String, String> stageArea;
     public HashMap<String, String> rm;
 //    public Commit master;
     public HashMap<String,Commit> branches;
     public String curBranch;
+    public String curSha;
 
     public Repository()  {
         setupPersistence();
-        initCommit = new Commit();
         initCommit.saveCommit();
         head = initCommit;
         stageArea = new HashMap<>();
         rm = new HashMap<>();
-//        master = head;
+        Commit master = head;
         curBranch = "master";
         branches = new HashMap<>();
-        branches.put(curBranch, head);
+        branches.put(curBranch, master);
+        curSha = Utils.sha1(Utils.serialize(head));
     }
 
 
@@ -158,9 +159,13 @@ public class Repository implements Serializable {
         // 2. update the stage one and rm one
         // 3. clear stage area and rm area
         // 4. update tree and change head
-        ArrayList<String> newParent = head.getParent();
+        ArrayList<String> headParent = head.getParent();
+        ArrayList<String> newParent = new ArrayList<>();
+        newParent.addAll(headParent);
         newParent.add(Utils.sha1(Utils.serialize(head)));
-        HashMap<String, String> newBlobs = head.getBlobs();
+        HashMap<String, String> headBlobs = head.getBlobs();
+        HashMap<String, String> newBlobs = new HashMap<>();
+        newBlobs.putAll(headBlobs);
         // read from stage to find the correlated blobs
         if (stageArea.isEmpty() && rm.isEmpty()) {
             System.out.println("No changes added to the commit.");
@@ -175,9 +180,11 @@ public class Repository implements Serializable {
         }
         rm.clear();
         Commit newCommit = new Commit(msg, new Date(), newParent, newBlobs);
-        head = newCommit;
-        branches.put(curBranch, head);
         newCommit.saveCommit();
+        head = newCommit;
+        Commit curhead = head;
+        branches.put(curBranch, curhead);
+        curSha = Utils.sha1(Utils.serialize(head));
         // todo: rm
     }
 
@@ -206,12 +213,16 @@ public class Repository implements Serializable {
         // todo: format time, try to understand
         // todo: merge
         // todo: know the hacky code!!!!
+        List<String> allCommits = Utils.plainFilenamesIn(Commit.COMMIT_FOLDER);
+        String heauid = Utils.sha1(Utils.serialize(head));
         ArrayList<String> commitList = new ArrayList<>();
         for (String uid: head.getParent()) {
             commitList.add(uid);
-//            Commit test1 = Commit.fromFile(uid);
+
         }
-        commitList.add(Utils.sha1(Utils.serialize(head)));
+//        Commit test1 = Commit.fromFile(commitList.get(0));
+//        Commit test2 = Commit.fromFile(commitList.get(1));
+        commitList.add(curSha);
         for (int i = commitList.size() - 1; i >= 0; i--) {
             String uid = commitList.get(i);
             printLog(uid);
@@ -373,22 +384,32 @@ public class Repository implements Serializable {
         }
         Set<String> curFileSet = head.getBlobs().keySet();
         Set<String> newFileSet = branches.get(branchname).getBlobs().keySet();
-        if (!curFileSet.containsAll(newFileSet)) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            return;
+        List<String> cwdFileList = Utils.plainFilenamesIn(CWD); // todo: hacky!!!
+        for (String filename: cwdFileList) {
+            if (newFileSet.contains(filename) && !curFileSet.contains(filename)) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                return;
+            }
+            String sha = head.getBlobs().get(filename);
+            if (!readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                return;
+            }
         }
         // change the cwd
         for (String filename: newFileSet) {
             writeToCwd(branches.get(branchname).getBlobs().get(filename), filename);
         }
-        curFileSet.removeAll(newFileSet);
         for (String filename: curFileSet) {
-            Utils.restrictedDelete(Utils.join(CWD, filename));
+            if (!newFileSet.contains(filename)) {
+                Utils.restrictedDelete(Utils.join(CWD, filename));
+            }
         }
         stageArea.clear();
         rm.clear();
         curBranch = branchname;
         head = branches.get(branchname);
+        curSha = Utils.sha1(Utils.serialize(head));
     }
 
     public void branch(String branchname) {
@@ -396,7 +417,8 @@ public class Repository implements Serializable {
             System.out.println("A branch with that name already exists.");
             return;
         }
-        branches.put(branchname, head);
+        Commit newBranch = head;
+        branches.put(branchname, newBranch);
     }
 
     public void rm_branch(String branchname) {

@@ -111,11 +111,12 @@ public class Main {
                 else if (args.length == 3 && args[1].equals("--")) {
                     repo.checkoutFile(args[2]);
                 }
-                else if(args.length == 4) {
+                else if(args.length == 4  && args[2].equals("--")) {
                     repo.checkoutCommit(args[1], args[3]);
                 }
                 else {
                     System.out.println("Incorrect operands.");
+                    return;
                 }
                 break;
             case "branch":
