@@ -556,19 +556,34 @@ public class Repository implements Serializable {
                 // conflict
                 // first read content and then write a new file, should stage and store the file in the BLOB_FOLDER
                 String blobcode = mergeConflict(uidofHead, uidofGiven, filename);
-                writeToCwd(blobcode, filename);
+//                writeToCwd(blobcode, filename);
                 conflict = true;
             }
             // 5.only in given, stage given for addition
             if (uidofParent.equals(" ") && uidofHead.equals(" ") && !uidofGiven.equals(" ")) {
                 stageArea.put(filename, uidofGiven);
-                writeToCwd(uidofGiven,filename);
+//                writeToCwd(uidofGiven,filename);
             }
             // 6.only absent in given, stage for remove, and untracked
             if (!uidofParent.equals(" ") && !uidofHead.equals(" ") && uidofGiven.equals(" ") && uidofHead.equals(uidofParent)) {
-                rm.remove(filename);
-                rm(filename);
+                rm.put(filename, uidofHead);
+//                rm(filename);
             }
+        }
+        // check error and then revise the CWD
+        List<String> cwdFileList = Utils.plainFilenamesIn(CWD);
+        for (String eachFile: cwdFileList) {
+            if (!headCommit.getBlobs().containsKey(eachFile)) {
+                if (stageArea.containsKey(eachFile) || rm.containsKey(eachFile)) {
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                }
+            }
+        }
+        for (String eachFile: stageArea.keySet()) {
+            writeToCwd(stageArea.get(eachFile), eachFile);
+        }
+        for (String eachFile: rm.keySet()) {
+            rm(eachFile);
         }
         // commit
         commitMerge(branchname);
@@ -610,12 +625,12 @@ public class Repository implements Serializable {
     }
     public String mergeConflict(String uidofHead, String uidofGiven, String filename) {
         // todo: how to solve null
-        String headFileContent = " ";
+        String headFileContent = "";
         if (!uidofHead.equals(" ")) {
             File headFile = Utils.join(BLOB_FOLDER, uidofHead);
             headFileContent = readContentsAsString(headFile);
         }
-        String givenFileContent = " ";
+        String givenFileContent = "";
         if (!uidofGiven.equals(" ")) {
             File givenFile = Utils.join(BLOB_FOLDER, uidofGiven);
             givenFileContent = readContentsAsString(givenFile);
