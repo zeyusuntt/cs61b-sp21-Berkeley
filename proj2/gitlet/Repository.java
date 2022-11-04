@@ -403,7 +403,7 @@ public class Repository implements Serializable {
                 return;
             }
             String sha = headCommit.getBlobs().get(filename);
-            if (!readContentsAsString(Utils.join(BLOB_FOLDER, sha)).isEmpty() && !readContentsAsString(Utils.join(CWD, filename)).isEmpty() && !readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
+            if (cwdFileList.contains(filename) && curFileSet.contains(filename) && !readContentsAsString(Utils.join(BLOB_FOLDER, sha)).equals(readContentsAsString(Utils.join(CWD, filename)))) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 return;
             }
@@ -512,7 +512,7 @@ public class Repository implements Serializable {
             String uidofHead = headCommit.getBlobs().get(filename);
             String uidofGiven = givenCommit.getBlobs().get(filename);
             // 1.if modified in given but not head, stage given for addition
-            if (uidofParent.equals(uidofHead) && splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename)) {
+            if (splitPoint.getBlobs().containsKey(filename) && givenCommit.getBlobs().containsKey(filename) && uidofParent.equals(uidofHead)) {
                 stageArea.put(filename, uidofGiven);
             }
             // 3.if both modified, in same way: don't change; in different way: conflict
@@ -537,7 +537,7 @@ public class Repository implements Serializable {
                 stageArea.put(filename, uidofGiven);
             }
             // 6.only absent in given, stage for remove, and untracked
-            if (splitPoint.getBlobs().containsKey(filename) && uidofHead.equals(uidofParent) && !givenCommit.getBlobs().containsKey(filename)) {
+            if (splitPoint.getBlobs().containsKey(filename) && headCommit.getBlobs().containsKey(filename) && uidofHead.equals(uidofParent) && !givenCommit.getBlobs().containsKey(filename)) {
                 rm.put(filename, uidofParent);
             }
         }
@@ -554,14 +554,14 @@ public class Repository implements Serializable {
 
         List<String> headParent = headCommit.getParent();
         List<String> givenParent = givenCommit.getParent();
-        for (int i = 0; i < Math.min(headParent.size(), givenParent.size()); i++) {
-            if (headParent.get(i) == givenParent.get(i)) {
-                if ( i+1 == Math.min(headParent.size(), givenParent.size()) || headParent.get(i+1) != givenParent.get(i+1)) {
+        for (int i = 0; i < Math.min(headParent.size() - 1, givenParent.size()); i++) {
+            if (headParent.get(i).equals(givenParent.get(i))) {
+                if ( !headParent.get(i+1).equals(givenParent.get(i+1))) {
                     return Commit.fromFile(headParent.get(i));
                 }
             }
         }
-        return null;
+        return Commit.fromFile(headParent.get(Math.min(headParent.size() - 1, givenParent.size())));
     }
 
 }
