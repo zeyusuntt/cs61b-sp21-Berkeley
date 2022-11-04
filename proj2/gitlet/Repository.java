@@ -359,7 +359,7 @@ public class Repository implements Serializable {
     // todo: do we need to abbr??
     public void checkoutCommit(String unsureCommitId, String filename) {
         String commitId;
-        if (unsureCommitId.length() == 7) {
+        if (unsureCommitId.length() < head.length()) {
             commitId = returnCompleteCommitId(unsureCommitId);
             if (commitId.equals("-1")) {
                 System.out.println("No commit with that id exists.");
@@ -386,7 +386,7 @@ public class Repository implements Serializable {
     public String returnCompleteCommitId(String unsureCommitId) {
         List<String> allCommits = Utils.plainFilenamesIn(Commit.COMMIT_FOLDER);
         for (String commitId: allCommits) {
-            if (commitId.substring(0, 7).equals(unsureCommitId)) {
+            if (commitId.substring(0, unsureCommitId.length()).equals(unsureCommitId)) {
                 return commitId;
             }
         }
