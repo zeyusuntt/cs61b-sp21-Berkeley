@@ -209,7 +209,7 @@ public class Repository implements Serializable {
         ArrayList<String> commitList = new ArrayList<>();
         for (String uid: head.getParent()) {
             commitList.add(uid);
-            Commit test1 = Commit.fromFile(uid);
+//            Commit test1 = Commit.fromFile(uid);
         }
         commitList.add(Utils.sha1(Utils.serialize(head)));
         for (int i = commitList.size() - 1; i >= 0; i--) {
@@ -340,7 +340,12 @@ public class Repository implements Serializable {
     }
     // todo: do we need to abbr??
     public void checkoutCommit(String commitId, String filename) {
-        Commit curCommit = Commit.fromFile(commitId);
+        File readFile = Utils.join(Commit.COMMIT_FOLDER, commitId);
+        if (!readFile.exists()) {
+            System.out.println("No commit with that id exists.");
+            return;
+        }
+        Commit curCommit = Utils.readObject(readFile, Commit.class);
         String sha = curCommit.getBlobs().get(filename);
         if (sha == null) {
             System.out.println("File does not exist in that commit.");
