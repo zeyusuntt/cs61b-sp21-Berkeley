@@ -555,7 +555,8 @@ public class Repository implements Serializable {
             if (!uidofParent.equals(uidofHead) && !uidofParent.equals(uidofGiven) && !uidofGiven.equals(uidofHead)) {
                 // conflict
                 // first read content and then write a new file, should stage and store the file in the BLOB_FOLDER
-                mergeConflict(uidofHead, uidofGiven, filename);
+                String blobcode = mergeConflict(uidofHead, uidofGiven, filename);
+                writeToCwd(blobcode, filename);
                 conflict = true;
             }
             // 5.only in given, stage given for addition
@@ -565,6 +566,7 @@ public class Repository implements Serializable {
             }
             // 6.only absent in given, stage for remove, and untracked
             if (!uidofParent.equals(" ") && !uidofHead.equals(" ") && uidofGiven.equals(" ") && uidofHead.equals(uidofParent)) {
+                rm.remove(filename);
                 rm(filename);
             }
         }
@@ -606,7 +608,7 @@ public class Repository implements Serializable {
         head = Utils.sha1(Utils.serialize(newCommit));
         branches.put(curBranch, head);
     }
-    public void mergeConflict(String uidofHead, String uidofGiven, String filename) {
+    public String mergeConflict(String uidofHead, String uidofGiven, String filename) {
         // todo: how to solve null
         String headFileContent = " ";
         if (!uidofHead.equals(" ")) {
@@ -618,10 +620,11 @@ public class Repository implements Serializable {
             File givenFile = Utils.join(BLOB_FOLDER, uidofGiven);
             givenFileContent = readContentsAsString(givenFile);
         }
-        String newFileContent = "<<<<<<< HEAD" + "\n" + headFileContent + "=======" + "\n" + givenFileContent + ">>>>>>>";
+        String newFileContent = "<<<<<<< HEAD" + "\n" + headFileContent + "=======" + "\n" + givenFileContent + ">>>>>>>" + "\n";
         String blobCode = Utils.sha1(Utils.serialize(newFileContent));
         writeContents(Utils.join(BLOB_FOLDER, blobCode),newFileContent);
         stageArea.put(filename, blobCode);
+        return blobCode;
     }
 
     public Commit findSplitPoint(Commit headCommit, Commit givenCommit) {
